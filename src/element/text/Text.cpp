@@ -134,7 +134,7 @@ void CTextElement::reposition(const Hyprutils::Math::CBox& box, const Hyprutils:
     IElement::reposition(box);
 
     const auto DESIRED = m_impl->preferred;
-    if (DESIRED.x > 0 && DESIRED.y > 0 && !m_impl->data.noEllipsize) {
+    if (DESIRED.x > 0 && DESIRED.y > 0) {
         const auto PREV     = m_impl->lastMaxSize;
         m_impl->lastMaxSize = {-1, -1};
         const auto SIZE     = box.size();
@@ -177,7 +177,24 @@ std::optional<Vector2D> CTextElement::maximumSize(const Hyprutils::Math::Vector2
 }
 
 std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->preferred;
+    auto [CAIROSURFACE, CAIRO, LAYOUT, LAYOUTSIZE] = m_impl->prepPangoLayout();
+    if (parent.x != 0)
+        pango_layout_set_width(LAYOUT, sc<int>(parent.x * PANGO_SCALE * m_impl->lastScale));
+    else
+        pango_layout_set_width(LAYOUT, -1);
+    if (parent.y != 0)
+        pango_layout_set_height(LAYOUT, sc<int>(parent.y * PANGO_SCALE * m_impl->lastScale));
+    else
+        pango_layout_set_height(LAYOUT, -1);
+    pango_layout_set_wrap(LAYOUT, PANGO_WRAP_WORD_CHAR);
+    pango_layout_set_ellipsize(LAYOUT, PANGO_ELLIPSIZE_NONE);
+
+    PangoRectangle ink, logical;
+    pango_layout_get_pixel_extents(LAYOUT, &ink, &logical);
+
+    auto result = Vector2D{std::ceil(logical.width / m_impl->lastScale), std::ceil(logical.height / m_impl->lastScale)};
+
+    return result;
 }
 
 std::optional<Vector2D> CTextElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
@@ -240,7 +257,7 @@ std::tuple<UP<Hyprgraphics::CCairoSurface>, cairo_t*, PangoLayout*, Vector2D> ST
     PangoRectangle ink, logical;
     pango_layout_get_pixel_extents(layout, &ink, &logical);
 
-    std::optional<Vector2D> maxSize = data.clampSize.value_or(lastMaxSize).round();
+    std::optional<Vector2D> maxSize = data.clampSize.value_or(lastMaxSize);
     if (maxSize == Vector2D{0, 0})
         maxSize = std::nullopt;
 
@@ -272,7 +289,9 @@ Hyprutils::Math::Vector2D STextImpl::getTextSizePreferred() {
     g_object_unref(LAYOUT);
     cairo_destroy(CAIRO);
 
-    return LAYOUTSIZE / lastScale;
+    auto scaledSize = LAYOUTSIZE / lastScale;
+
+    return {std::ceil(scaledSize.x), std::ceil(scaledSize.y)};
 }
 
 CBox STextImpl::getCharBox(size_t offset) {
