@@ -112,6 +112,7 @@ namespace Hyprtoolkit::LinearLayout {
 
                 // squeeze the last element in
                 sizes.at(i) = MAX - used;
+                used = MAX;
                 continue;
             }
 
@@ -130,6 +131,7 @@ namespace Hyprtoolkit::LinearLayout {
                 if (!grows(C.at(i)))
                     continue;
                 sizes.at(i) += MAX - used;
+                used = MAX;
                 break;
             }
         }
