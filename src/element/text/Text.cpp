@@ -48,6 +48,7 @@ SP<CTextElement> CTextElement::create(const STextData& data) {
 CTextElement::CTextElement(const STextData& data) : IElement(), m_impl(makeUnique<STextImpl>()) {
     m_impl->data = data;
     m_impl->parseText();
+    m_impl->updatePangoData();
     m_impl->lastFontSizeUnscaled = m_impl->data.fontSize.ptSize();
 
     impl->m_externalEvents.mouseMove.listenStatic([this](const Vector2D& pos) {
@@ -71,6 +72,7 @@ void CTextElement::setText(std::string text) {
 
     m_impl->data.text = std::move(text);
     m_impl->parseText();
+    m_impl->updatePangoData();
     m_impl->scheduleTexRefresh();
 
     if (impl->window)
@@ -101,6 +103,8 @@ void CTextElement::replaceData(const STextData& data) {
 
     if (impl->window)
         impl->window->scheduleReposition(impl->self);
+
+    m_impl->updatePangoData();
 }
 
 SP<CTextBuilder> CTextElement::rebuild() {
@@ -134,6 +138,7 @@ void CTextElement::paint() {
 
     if ((impl->window && impl->window->scale() != m_impl->lastScale) || m_impl->needsTexRefresh) {
         m_impl->lastScale = impl->window ? impl->window->scale() : 1.F;
+        m_impl->updatePangoData();
         if (!m_impl->resource)
             m_impl->renderTex();
         textureToUse = m_impl->oldTex;
@@ -201,8 +206,7 @@ std::optional<Vector2D> CTextElement::maximumSize(const Hyprutils::Math::Vector2
 }
 
 std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    auto PANGO_DATA = m_impl->prepPangoLayout();
-    auto LAYOUT = PANGO_DATA.layout;
+    auto LAYOUT = m_impl->pangoData.layout;
     if (parent.x != 0)
         pango_layout_set_width(LAYOUT, sc<int>(parent.x * PANGO_SCALE * m_impl->lastScale));
     else
@@ -236,35 +240,46 @@ bool CTextElement::positioningDependsOnChild() {
     return m_impl->data.size.hasAuto();
 }
 
-SPangoData::SPangoData(PangoLayout *layout, PangoContext *context) : layout(layout), context(context) {
+SPangoData::SPangoData() : layout(nullptr), context(nullptr) { }
+
+SPangoData::SPangoData(PangoLayout *layout, PangoContext *context) : layout(layout), context(context) { }
+
+SPangoData::SPangoData(SPangoData&& other) noexcept : layout(other.layout), context(other.context) {
+    ref();
 }
 
-SPangoData::SPangoData(const SPangoData& other) : layout(other.layout), context(other.context) {
-    g_object_ref(layout);
-    g_object_ref(context);
-}
-
-SPangoData& SPangoData::operator=(const SPangoData& other) {
+SPangoData& SPangoData::operator=(SPangoData&& other) noexcept {
     if (this != &other) {
-        g_object_unref(layout);
-        g_object_unref(context);
+        unref();
 
         layout = other.layout;
         context = other.context;
 
-        g_object_ref(layout);
-        g_object_ref(context);
+        ref();
     }
 
     return *this;
 }
 
 SPangoData::~SPangoData() {
-    g_object_unref(layout);
-    g_object_unref(context);
+    unref();
 }
 
-SPangoData STextImpl::prepPangoLayout() {
+void SPangoData::unref() const {
+    if (layout)
+        g_object_unref(layout);
+    if (context)
+        g_object_unref(context);
+}
+
+void SPangoData::ref() const {
+    if (layout)
+        g_object_ref(layout);
+    if (context)
+        g_object_ref(context);
+}
+
+void STextImpl::updatePangoData() {
     PangoFontMap *font_map = pango_cairo_font_map_get_default();
     PangoContext *context = pango_font_map_create_context(font_map);
     PangoLayout* layout = pango_layout_new(context);
@@ -309,12 +324,11 @@ SPangoData STextImpl::prepPangoLayout() {
         pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
     }
 
-    return { layout, context };
+    pangoData = SPangoData(layout, context);
 }
 
 CBox STextImpl::getCharBox(size_t offset) {
-    auto PANGO_DATA = prepPangoLayout();
-    auto LAYOUT = PANGO_DATA.layout;
+    auto LAYOUT = pangoData.layout;
 
     PangoRectangle rect;
 
@@ -333,8 +347,7 @@ CBox STextImpl::getCharBox(size_t offset) {
 }
 
 std::optional<size_t> STextImpl::vecToOffset(const Vector2D& vec) {
-    auto PANGO_DATA = prepPangoLayout();
-    auto LAYOUT = PANGO_DATA.layout;
+    auto LAYOUT = pangoData.layout;
 
     auto pangoX = sc<int>(vec.x * PANGO_SCALE), //
         pangoY  = sc<int>(vec.y * PANGO_SCALE);

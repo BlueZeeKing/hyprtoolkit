@@ -37,11 +37,15 @@ namespace Hyprtoolkit {
         PangoLayout*  layout;
         PangoContext *context;
 
+        SPangoData();
         SPangoData(PangoLayout *layout, PangoContext *context);
-        SPangoData(const SPangoData&);
-        SPangoData(SPangoData&&)                   = delete;
-        SPangoData&   operator=(const SPangoData&);
-        SPangoData&   operator=(SPangoData&&)      = delete;
+        SPangoData(const SPangoData&)              = delete;
+        SPangoData(SPangoData&&) noexcept;
+        SPangoData& operator=(const SPangoData&) = delete;
+        SPangoData& operator=(SPangoData&&) noexcept;
+
+        void ref() const;
+        void unref() const;
 
         ~SPangoData();
     };
@@ -58,6 +62,8 @@ namespace Hyprtoolkit {
         size_t                                                                                         lastFontSizeUnscaled = 0;
         float                                                                                          lastScale            = 1.F;
         bool                                                                                           needsTexRefresh = false, newTex = false;
+
+        SPangoData                                                                                     pangoData;
 
         SP<IRendererTexture>                                                                           tex;
         SP<IRendererTexture>                                                                           oldTex; // while loading a new one
@@ -77,7 +83,7 @@ namespace Hyprtoolkit {
         float                                                                                          getCursorPos(size_t offset);
         float                                                                                          getCursorPos(const Hyprutils::Math::Vector2D& click);
         Hyprutils::Math::Vector2D                                                                      unscale(const Hyprutils::Math::Vector2D& x);
-        SPangoData prepPangoLayout();
+        void                                                                                           updatePangoData();
         void                                                                                           scheduleTexRefresh();
         void                                                                                           renderTex();
         void                                                                                           postTexLoad();
