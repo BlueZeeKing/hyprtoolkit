@@ -83,7 +83,12 @@ namespace Hyprtoolkit {
         float                                                                                          getCursorPos(size_t offset);
         float                                                                                          getCursorPos(const Hyprutils::Math::Vector2D& click);
         Hyprutils::Math::Vector2D                                                                      unscale(const Hyprutils::Math::Vector2D& x);
-        void                                                                                           updatePangoData();
+        void                                                                                           setPangoData();
+        void                                                                                           setPangoFont();
+        void                                                                                           setPangoAlign();
+        void                                                                                           setPangoText();
+        void                                                                                           setPangoEllipsize();
+        void                                                                                           updateScale();
         void                                                                                           scheduleTexRefresh();
         void                                                                                           renderTex();
         void                                                                                           postTexLoad();

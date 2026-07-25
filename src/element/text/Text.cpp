@@ -47,9 +47,9 @@ SP<CTextElement> CTextElement::create(const STextData& data) {
 
 CTextElement::CTextElement(const STextData& data) : IElement(), m_impl(makeUnique<STextImpl>()) {
     m_impl->data = data;
-    m_impl->parseText();
-    m_impl->updatePangoData();
     m_impl->lastFontSizeUnscaled = m_impl->data.fontSize.ptSize();
+    m_impl->setPangoData();
+    m_impl->parseText();
 
     impl->m_externalEvents.mouseMove.listenStatic([this](const Vector2D& pos) {
         m_impl->lastCursorPos = pos;
@@ -72,7 +72,6 @@ void CTextElement::setText(std::string text) {
 
     m_impl->data.text = std::move(text);
     m_impl->parseText();
-    m_impl->updatePangoData();
     m_impl->scheduleTexRefresh();
 
     if (impl->window)
@@ -83,6 +82,18 @@ void CTextElement::replaceData(const STextData& data) {
     const bool TEXT_DIFFERENT  = data.text != m_impl->data.text;
     const auto COLOR           = data.color();
     const bool COLOR_DIFFERENT = COLOR != m_impl->color->goal();
+
+    if (data.align != m_impl->data.align) {
+        m_impl->setPangoAlign();
+    }
+
+    if (data.noEllipsize != m_impl->data.noEllipsize) {
+        m_impl->setPangoEllipsize();
+    }
+
+    if (data.fontFamily != m_impl->data.fontFamily) {
+        m_impl->setPangoFont();
+    }
 
     m_impl->data = data;
     if (m_impl->colorAnimationEnabled) {
@@ -95,6 +106,10 @@ void CTextElement::replaceData(const STextData& data) {
         m_impl->needsTexRefresh = m_impl->needsTexRefresh || COLOR_DIFFERENT;
     }
 
+    if (m_impl->lastFontSizeUnscaled != m_impl->data.fontSize.ptSize()) {
+        m_impl->setPangoFont();
+    }
+
     if (m_impl->lastFontSizeUnscaled != m_impl->data.fontSize.ptSize() || TEXT_DIFFERENT) {
         m_impl->parseText();
         m_impl->lastFontSizeUnscaled = m_impl->data.fontSize.ptSize();
@@ -103,8 +118,6 @@ void CTextElement::replaceData(const STextData& data) {
 
     if (impl->window)
         impl->window->scheduleReposition(impl->self);
-
-    m_impl->updatePangoData();
 }
 
 SP<CTextBuilder> CTextElement::rebuild() {
@@ -136,9 +149,8 @@ void CTextElement::paint() {
         return;
     }
 
-    if ((impl->window && impl->window->scale() != m_impl->lastScale) || m_impl->needsTexRefresh) {
-        m_impl->lastScale = impl->window ? impl->window->scale() : 1.F;
-        m_impl->updatePangoData();
+    m_impl->updateScale();
+    if (m_impl->needsTexRefresh) {
         if (!m_impl->resource)
             m_impl->renderTex();
         textureToUse = m_impl->oldTex;
@@ -206,6 +218,7 @@ std::optional<Vector2D> CTextElement::maximumSize(const Hyprutils::Math::Vector2
 }
 
 std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
+    m_impl->updateScale();
     auto LAYOUT = m_impl->pangoData.layout;
     auto maxSize = m_impl->applyClampSize(parent);
     if (maxSize.x != 0)
@@ -280,31 +293,43 @@ void SPangoData::ref() const {
         g_object_ref(context);
 }
 
-void STextImpl::updatePangoData() {
+void STextImpl::setPangoData() {
     PangoFontMap *font_map = pango_cairo_font_map_get_default();
     PangoContext *context = pango_font_map_create_context(font_map);
     PangoLayout* layout = pango_layout_new(context);
 
+    pangoData = { layout, context };
+
+    setPangoFont();
+    setPangoAlign();
+    setPangoEllipsize();
+}
+
+void STextImpl::setPangoFont() {
     PangoFontDescription* fontDesc = pango_font_description_from_string(data.fontFamily.c_str());
     pango_font_description_set_size(fontDesc, std::round(lastFontSizeUnscaled * lastScale) * PANGO_SCALE);
-    pango_layout_set_font_description(layout, fontDesc);
+    pango_layout_set_font_description(pangoData.layout, fontDesc);
     pango_font_description_free(fontDesc);
+}
 
+void STextImpl::setPangoAlign() {
     if (data.align == HT_FONT_ALIGN_LEFT)
-        pango_layout_set_alignment(layout, PANGO_ALIGN_LEFT);
+        pango_layout_set_alignment(pangoData.layout, PANGO_ALIGN_LEFT);
     else if (data.align == HT_FONT_ALIGN_CENTER)
-        pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
+        pango_layout_set_alignment(pangoData.layout, PANGO_ALIGN_CENTER);
     else
-        pango_layout_set_alignment(layout, PANGO_ALIGN_RIGHT);
+        pango_layout_set_alignment(pangoData.layout, PANGO_ALIGN_RIGHT);
+}
 
+void STextImpl::setPangoText() {
     PangoAttrList* attrList = nullptr;
     GError*        gError   = nullptr;
     char*          buf      = nullptr;
     if (pango_parse_markup(parsedText.c_str(), -1, 0, &attrList, &buf, nullptr, &gError))
-        pango_layout_set_text(layout, buf, -1);
+        pango_layout_set_text(pangoData.layout, buf, -1);
     else {
         g_error_free(gError);
-        pango_layout_set_text(layout, parsedText.c_str(), -1);
+        pango_layout_set_text(pangoData.layout, parsedText.c_str(), -1);
     }
 
     if (!attrList)
@@ -314,18 +339,26 @@ void STextImpl::updatePangoData() {
         free(buf);
 
     pango_attr_list_insert(attrList, pango_attr_scale_new(1));
-    pango_layout_set_attributes(layout, attrList);
+    pango_layout_set_attributes(pangoData.layout, attrList);
     pango_attr_list_unref(attrList);
+}
 
+void STextImpl::setPangoEllipsize() {
     if (data.noEllipsize) {
-        pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
-        pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_NONE);
+        pango_layout_set_wrap(pangoData.layout, PANGO_WRAP_WORD_CHAR);
+        pango_layout_set_ellipsize(pangoData.layout, PANGO_ELLIPSIZE_NONE);
     } else {
-        pango_layout_set_wrap(layout, PANGO_WRAP_NONE);
-        pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
+        pango_layout_set_wrap(pangoData.layout, PANGO_WRAP_NONE);
+        pango_layout_set_ellipsize(pangoData.layout, PANGO_ELLIPSIZE_END);
     }
+}
 
-    pangoData = SPangoData(layout, context);
+void STextImpl::updateScale() {
+    if (self && self->impl->window && self->impl->window->scale() != lastScale) {
+        lastScale = self->impl->window->scale();
+        setPangoFont();
+        needsTexRefresh = true;
+    }
 }
 
 CBox STextImpl::getCharBox(size_t offset) {
@@ -402,8 +435,6 @@ void STextImpl::renderTex() {
     tex.reset();
 
     waitingForTex = true;
-
-    lastScale = self->impl->window ? self->impl->window->scale() : 1.F;
 
     self->impl->damageEntire();
     
@@ -553,6 +584,8 @@ void STextImpl::parseText() {
     }
 
     parsedText = std::move(newString);
+
+    setPangoText();
 }
 
 void STextImpl::recheckTextBoxes() {
