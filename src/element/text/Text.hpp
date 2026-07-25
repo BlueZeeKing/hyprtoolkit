@@ -91,6 +91,7 @@ namespace Hyprtoolkit {
         void                                                                                           recheckTextBoxes();
         void                                                                                           onMouseDown();
         void                                                                                           onMouseMove();
+        Hyprutils::Math::Vector2D                                                                      applyClampSize(Hyprutils::Math::Vector2D);
 
         friend class CTextboxElement;
         friend struct STextboxImpl;

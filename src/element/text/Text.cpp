@@ -207,12 +207,13 @@ std::optional<Vector2D> CTextElement::maximumSize(const Hyprutils::Math::Vector2
 
 std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
     auto LAYOUT = m_impl->pangoData.layout;
-    if (parent.x != 0)
-        pango_layout_set_width(LAYOUT, sc<int>(parent.x * PANGO_SCALE * m_impl->lastScale));
+    auto maxSize = m_impl->applyClampSize(parent);
+    if (maxSize.x != 0)
+        pango_layout_set_width(LAYOUT, sc<int>(maxSize.x * PANGO_SCALE * m_impl->lastScale));
     else
         pango_layout_set_width(LAYOUT, -1);
-    if (parent.y != 0)
-        pango_layout_set_height(LAYOUT, sc<int>(parent.y * PANGO_SCALE * m_impl->lastScale));
+    if (maxSize.y != 0)
+        pango_layout_set_height(LAYOUT, sc<int>(maxSize.y * PANGO_SCALE * m_impl->lastScale));
     else
         pango_layout_set_height(LAYOUT, -1);
 
@@ -406,7 +407,7 @@ void STextImpl::renderTex() {
 
     self->impl->damageEntire();
     
-    Vector2D maxSize = self->impl->position.size() * lastScale;
+    Vector2D maxSize = applyClampSize(self->impl->position.size()) * lastScale;
 
     const auto COLOR = colorAnimationEnabled ? CHyprColor{1.F, 1.F, 1.F, 1.F} : data.color();
     resource         = makeAtomicShared<CTextResource>(CTextResource::STextResourceData{
@@ -586,4 +587,12 @@ void STextImpl::onMouseMove() {
         hoveredTextLink = &link;
         break;
     }
+}
+
+Vector2D STextImpl::applyClampSize(Vector2D size) {
+    if (!data.clampSize.has_value()) {
+        return size;
+    }
+
+    return { std::min(size.x, data.clampSize->x), std::min(size.y, data.clampSize->y) };
 }
