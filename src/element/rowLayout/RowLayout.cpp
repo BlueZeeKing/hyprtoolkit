@@ -39,10 +39,14 @@ void CRowLayoutElement::reposition(const Hyprutils::Math::CBox& sbox, const Hypr
 }
 
 Hyprutils::Math::Vector2D CRowLayoutElement::childSize(Hyprutils::Memory::CSharedPointer<IElement> child) {
-    if (child->preferredSize(impl->position.size()))
-        return *child->preferredSize(impl->position.size());
-    else if (child->minimumSize(impl->position.size()))
-        return *child->minimumSize(impl->position.size());
+    auto pref = child->preferredSize(impl->position.size());
+    if (pref)
+        return *pref;
+
+    auto min = child->minimumSize(impl->position.size());
+    if (min)
+        return *min;
+
     return {-1, -1};
 }
 
