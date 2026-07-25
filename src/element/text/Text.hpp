@@ -33,6 +33,19 @@ namespace Hyprtoolkit {
         Hyprutils::Math::CRegion region;
     };
 
+    struct SPangoData {
+        PangoLayout*  layout;
+        PangoContext *context;
+
+        SPangoData(PangoLayout *layout, PangoContext *context);
+        SPangoData(const SPangoData&);
+        SPangoData(SPangoData&&)                   = delete;
+        SPangoData&   operator=(const SPangoData&);
+        SPangoData&   operator=(SPangoData&&)      = delete;
+
+        ~SPangoData();
+    };
+
     struct STextImpl {
         STextData                                                                                      data;
 
@@ -64,7 +77,7 @@ namespace Hyprtoolkit {
         float                                                                                          getCursorPos(size_t offset);
         float                                                                                          getCursorPos(const Hyprutils::Math::Vector2D& click);
         Hyprutils::Math::Vector2D                                                                      unscale(const Hyprutils::Math::Vector2D& x);
-        PangoLayout* prepPangoLayout();
+        SPangoData prepPangoLayout();
         void                                                                                           scheduleTexRefresh();
         void                                                                                           renderTex();
         void                                                                                           postTexLoad();

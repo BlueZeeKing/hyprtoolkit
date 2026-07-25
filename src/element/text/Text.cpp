@@ -1,6 +1,7 @@
 #include "Text.hpp"
 
 #include <cmath>
+#include <glib-object.h>
 #include <hyprtoolkit/palette/Palette.hpp>
 #include <hyprgraphics/color/Color.hpp>
 #include <hyprutils/math/Vector2D.hpp>
@@ -200,7 +201,8 @@ std::optional<Vector2D> CTextElement::maximumSize(const Hyprutils::Math::Vector2
 }
 
 std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    auto LAYOUT = m_impl->prepPangoLayout();
+    auto PANGO_DATA = m_impl->prepPangoLayout();
+    auto LAYOUT = PANGO_DATA.layout;
     if (parent.x != 0)
         pango_layout_set_width(LAYOUT, sc<int>(parent.x * PANGO_SCALE * m_impl->lastScale));
     else
@@ -234,7 +236,35 @@ bool CTextElement::positioningDependsOnChild() {
     return m_impl->data.size.hasAuto();
 }
 
-PangoLayout* STextImpl::prepPangoLayout() {
+SPangoData::SPangoData(PangoLayout *layout, PangoContext *context) : layout(layout), context(context) {
+}
+
+SPangoData::SPangoData(const SPangoData& other) : layout(other.layout), context(other.context) {
+    g_object_ref(layout);
+    g_object_ref(context);
+}
+
+SPangoData& SPangoData::operator=(const SPangoData& other) {
+    if (this != &other) {
+        g_object_unref(layout);
+        g_object_unref(context);
+
+        layout = other.layout;
+        context = other.context;
+
+        g_object_ref(layout);
+        g_object_ref(context);
+    }
+
+    return *this;
+}
+
+SPangoData::~SPangoData() {
+    g_object_unref(layout);
+    g_object_unref(context);
+}
+
+SPangoData STextImpl::prepPangoLayout() {
     PangoFontMap *font_map = pango_cairo_font_map_get_default();
     PangoContext *context = pango_font_map_create_context(font_map);
     PangoLayout* layout = pango_layout_new(context);
@@ -279,11 +309,12 @@ PangoLayout* STextImpl::prepPangoLayout() {
         pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
     }
 
-    return layout;
+    return { layout, context };
 }
 
 CBox STextImpl::getCharBox(size_t offset) {
-    auto LAYOUT = prepPangoLayout();
+    auto PANGO_DATA = prepPangoLayout();
+    auto LAYOUT = PANGO_DATA.layout;
 
     PangoRectangle rect;
 
@@ -298,21 +329,18 @@ CBox STextImpl::getCharBox(size_t offset) {
         }
             .scale(1.F / lastScale);
 
-    g_object_unref(LAYOUT);
-
     return charBox;
 }
 
 std::optional<size_t> STextImpl::vecToOffset(const Vector2D& vec) {
-    auto LAYOUT = prepPangoLayout();
+    auto PANGO_DATA = prepPangoLayout();
+    auto LAYOUT = PANGO_DATA.layout;
 
     auto pangoX = sc<int>(vec.x * PANGO_SCALE), //
         pangoY  = sc<int>(vec.y * PANGO_SCALE);
 
     int index = 0, trailing = 0;
     pango_layout_xy_to_index(LAYOUT, pangoX, pangoY, &index, &trailing);
-
-    g_object_unref(LAYOUT);
 
     if (index == -1)
         return std::nullopt;
