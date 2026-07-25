@@ -3,7 +3,11 @@
 #include <cmath>
 #include <hyprtoolkit/palette/Palette.hpp>
 #include <hyprgraphics/color/Color.hpp>
+#include <hyprutils/math/Vector2D.hpp>
 #include <pango-1.0/pango/pangocairo.h>
+#include <pango/pango-fontmap.h>
+#include <pango/pango-layout.h>
+#include <pango/pango-types.h>
 
 #include "../../window/ToolkitWindow.hpp"
 #include "../../layout/Positioner.hpp"
@@ -44,7 +48,6 @@ CTextElement::CTextElement(const STextData& data) : IElement(), m_impl(makeUniqu
     m_impl->data = data;
     m_impl->parseText();
     m_impl->lastFontSizeUnscaled = m_impl->data.fontSize.ptSize();
-    m_impl->preferred            = m_impl->getTextSizePreferred();
 
     impl->m_externalEvents.mouseMove.listenStatic([this](const Vector2D& pos) {
         m_impl->lastCursorPos = pos;
@@ -67,7 +70,6 @@ void CTextElement::setText(std::string text) {
 
     m_impl->data.text = std::move(text);
     m_impl->parseText();
-    m_impl->preferred = m_impl->getTextSizePreferred();
     m_impl->scheduleTexRefresh();
 
     if (impl->window)
@@ -93,7 +95,6 @@ void CTextElement::replaceData(const STextData& data) {
     if (m_impl->lastFontSizeUnscaled != m_impl->data.fontSize.ptSize() || TEXT_DIFFERENT) {
         m_impl->parseText();
         m_impl->lastFontSizeUnscaled = m_impl->data.fontSize.ptSize();
-        m_impl->preferred            = m_impl->getTextSizePreferred();
         m_impl->scheduleTexRefresh();
     }
 
@@ -132,7 +133,6 @@ void CTextElement::paint() {
 
     if ((impl->window && impl->window->scale() != m_impl->lastScale) || m_impl->needsTexRefresh) {
         m_impl->lastScale = impl->window ? impl->window->scale() : 1.F;
-        m_impl->preferred = m_impl->getTextSizePreferred();
         if (!m_impl->resource)
             m_impl->renderTex();
         textureToUse = m_impl->oldTex;
@@ -167,34 +167,12 @@ void CTextElement::paint() {
 }
 
 void CTextElement::reposition(const Hyprutils::Math::CBox& box, const Hyprutils::Math::Vector2D& maxSize) {
+    auto inital_position = impl->position;
+
     IElement::reposition(box);
-
-    const auto DESIRED = m_impl->preferred;
-    if (DESIRED.x > 0 && DESIRED.y > 0) {
-        const auto PREV     = m_impl->lastMaxSize;
-        m_impl->lastMaxSize = {-1, -1};
-        const auto SIZE     = box.size();
-        if (maxSize.x > 0)
-            m_impl->lastMaxSize.x = maxSize.x;
-        if (maxSize.y > 0)
-            m_impl->lastMaxSize.y = maxSize.y;
-        // clamp to the layout's available-room hint (maxSize), already applied above. only fall
-        // back to the actual box when no hint was given: an auto-sized label's box equals its own
-        // (clamped) preferred and feeds back, flip-flopping at the boundary, whereas the room hint
-        // is stable and reflects the real container, so the text settles and recovers.
-        if (maxSize.x <= 0 && SIZE.x + 1 < DESIRED.x)
-            m_impl->lastMaxSize.x = SIZE.x;
-        if (maxSize.y <= 0 && SIZE.y + 1 < DESIRED.y)
-            m_impl->lastMaxSize.y = SIZE.y;
-
-        if (PREV != m_impl->lastMaxSize) {
-            m_impl->needsTexRefresh = true;
-            const auto LAST_PREF    = m_impl->preferred;
-            m_impl->lastScale       = impl->window ? impl->window->scale() : 1.F;
-            m_impl->preferred       = m_impl->getTextSizePreferred();
-            if (impl->window && (std::abs(LAST_PREF.x - m_impl->preferred.x) > 2 || std::abs(LAST_PREF.y - m_impl->preferred.y) > 2))
-                impl->window->scheduleReposition(impl->self.lock());
-        }
+    
+    if (inital_position != impl->position) {
+        m_impl->needsTexRefresh = true;
     }
 
     g_positioner->positionChildren(impl->self.lock());
@@ -222,7 +200,7 @@ std::optional<Vector2D> CTextElement::maximumSize(const Hyprutils::Math::Vector2
 }
 
 std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    auto [CAIROSURFACE, CAIRO, LAYOUT, LAYOUTSIZE] = m_impl->prepPangoLayout();
+    auto LAYOUT = m_impl->prepPangoLayout();
     if (parent.x != 0)
         pango_layout_set_width(LAYOUT, sc<int>(parent.x * PANGO_SCALE * m_impl->lastScale));
     else
@@ -231,13 +209,11 @@ std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vecto
         pango_layout_set_height(LAYOUT, sc<int>(parent.y * PANGO_SCALE * m_impl->lastScale));
     else
         pango_layout_set_height(LAYOUT, -1);
-    pango_layout_set_wrap(LAYOUT, PANGO_WRAP_WORD_CHAR);
-    pango_layout_set_ellipsize(LAYOUT, PANGO_ELLIPSIZE_NONE);
 
     PangoRectangle ink, logical;
     pango_layout_get_pixel_extents(LAYOUT, &ink, &logical);
 
-    auto result = Vector2D{std::ceil(logical.width / m_impl->lastScale), std::ceil(logical.height / m_impl->lastScale)};
+    auto result = Vector2D{std::ceil(logical.width / m_impl->lastScale), std::ceil(logical.height / m_impl->lastScale)} + Vector2D(impl->margin * 2, impl->margin * 2);
 
     return result;
 }
@@ -258,11 +234,10 @@ bool CTextElement::positioningDependsOnChild() {
     return m_impl->data.size.hasAuto();
 }
 
-std::tuple<UP<Hyprgraphics::CCairoSurface>, cairo_t*, PangoLayout*, Vector2D> STextImpl::prepPangoLayout() {
-    auto                  CAIROSURFACE = makeUnique<CCairoSurface>(cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1 /* dummy value */));
-    auto                  CAIRO        = cairo_create(CAIROSURFACE->cairo());
-
-    PangoLayout*          layout = pango_cairo_create_layout(CAIRO);
+PangoLayout* STextImpl::prepPangoLayout() {
+    PangoFontMap *font_map = pango_cairo_font_map_get_default();
+    PangoContext *context = pango_font_map_create_context(font_map);
+    PangoLayout* layout = pango_layout_new(context);
 
     PangoFontDescription* fontDesc = pango_font_description_from_string(data.fontFamily.c_str());
     pango_font_description_set_size(fontDesc, std::round(lastFontSizeUnscaled * lastScale) * PANGO_SCALE);
@@ -296,51 +271,19 @@ std::tuple<UP<Hyprgraphics::CCairoSurface>, cairo_t*, PangoLayout*, Vector2D> ST
     pango_layout_set_attributes(layout, attrList);
     pango_attr_list_unref(attrList);
 
-    int layoutWidth, layoutHeight;
-    pango_layout_get_size(layout, &layoutWidth, &layoutHeight);
-
-    PangoRectangle ink, logical;
-    pango_layout_get_pixel_extents(layout, &ink, &logical);
-
-    std::optional<Vector2D> maxSize = data.clampSize.value_or(lastMaxSize);
-    if (maxSize == Vector2D{0, 0})
-        maxSize = std::nullopt;
-
-    if (maxSize.has_value())
-        (*maxSize) *= lastScale;
-
-    if (maxSize.has_value()) {
-        const auto CLAMP_SIZE = maxSize.value();
-        if (!data.noEllipsize && maxSize.has_value() && maxSize->y >= 0)
-            pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
-        if (CLAMP_SIZE.x >= 0)
-            pango_layout_set_width(layout, std::min(logical.width * PANGO_SCALE, sc<int>(CLAMP_SIZE.x * PANGO_SCALE)));
-        if (CLAMP_SIZE.y >= 0)
-            pango_layout_set_height(layout, std::min(logical.height * PANGO_SCALE, sc<int>(CLAMP_SIZE.y * PANGO_SCALE)));
-        if (CLAMP_SIZE.x >= 0)
-            pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
-
-        pango_layout_get_pixel_extents(layout, &ink, &logical);
+    if (data.noEllipsize) {
+        pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
+        pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_NONE);
+    } else {
+        pango_layout_set_wrap(layout, PANGO_WRAP_NONE);
+        pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
     }
 
-    pango_layout_get_pixel_extents(layout, &ink, &logical);
-
-    return std::make_tuple<>(std::move(CAIROSURFACE), CAIRO, layout, Vector2D{logical.width, logical.height});
-}
-
-Hyprutils::Math::Vector2D STextImpl::getTextSizePreferred() {
-    auto [CAIROSURFACE, CAIRO, LAYOUT, LAYOUTSIZE] = prepPangoLayout();
-
-    g_object_unref(LAYOUT);
-    cairo_destroy(CAIRO);
-
-    auto scaledSize = LAYOUTSIZE / lastScale;
-
-    return {std::ceil(scaledSize.x), std::ceil(scaledSize.y)};
+    return layout;
 }
 
 CBox STextImpl::getCharBox(size_t offset) {
-    auto [CAIROSURFACE, CAIRO, LAYOUT, LAYOUTSIZE] = prepPangoLayout();
+    auto LAYOUT = prepPangoLayout();
 
     PangoRectangle rect;
 
@@ -356,13 +299,12 @@ CBox STextImpl::getCharBox(size_t offset) {
             .scale(1.F / lastScale);
 
     g_object_unref(LAYOUT);
-    cairo_destroy(CAIRO);
 
     return charBox;
 }
 
 std::optional<size_t> STextImpl::vecToOffset(const Vector2D& vec) {
-    auto [CAIROSURFACE, CAIRO, LAYOUT, LAYOUTSIZE] = prepPangoLayout();
+    auto LAYOUT = prepPangoLayout();
 
     auto pangoX = sc<int>(vec.x * PANGO_SCALE), //
         pangoY  = sc<int>(vec.y * PANGO_SCALE);
@@ -371,7 +313,6 @@ std::optional<size_t> STextImpl::vecToOffset(const Vector2D& vec) {
     pango_layout_xy_to_index(LAYOUT, pangoX, pangoY, &index, &trailing);
 
     g_object_unref(LAYOUT);
-    cairo_destroy(CAIRO);
 
     if (index == -1)
         return std::nullopt;
@@ -380,8 +321,10 @@ std::optional<size_t> STextImpl::vecToOffset(const Vector2D& vec) {
 }
 
 float STextImpl::getCursorPos(size_t offset) {
-    if (offset >= parsedText.length())
-        return preferred.x;
+    if (offset >= parsedText.length()) {
+        auto box = getCharBox(parsedText.length() - 1);
+        return box.x + box.size().x;
+    }
 
     if (offset == 0)
         return 0;
@@ -421,13 +364,8 @@ void STextImpl::renderTex() {
     lastScale = self->impl->window ? self->impl->window->scale() : 1.F;
 
     self->impl->damageEntire();
-
-    std::optional<Vector2D> maxSize = data.clampSize.value_or(lastMaxSize).round();
-    if (maxSize == Vector2D{0, 0})
-        maxSize = std::nullopt;
-
-    if (maxSize.has_value())
-        (*maxSize) *= lastScale;
+    
+    Vector2D maxSize = self->impl->position.size() * lastScale;
 
     const auto COLOR = colorAnimationEnabled ? CHyprColor{1.F, 1.F, 1.F, 1.F} : data.color();
     resource         = makeAtomicShared<CTextResource>(CTextResource::STextResourceData{
@@ -439,8 +377,8 @@ void STextImpl::renderTex() {
             Hyprgraphics::CTextResource::TEXT_ALIGN_LEFT :
             (data.align == HT_FONT_ALIGN_CENTER ? Hyprgraphics::CTextResource::TEXT_ALIGN_CENTER : Hyprgraphics::CTextResource::TEXT_ALIGN_RIGHT),
         .maxSize   = maxSize,
-        .ellipsize = !data.noEllipsize && maxSize.has_value() && maxSize->y >= 0,
-        .wrap      = maxSize.has_value() && maxSize->x >= 0,
+        .ellipsize = !data.noEllipsize,
+        .wrap      = data.noEllipsize,
     });
 
     if (Env::isTrace()) {
@@ -449,9 +387,9 @@ void STextImpl::renderTex() {
                       TEXT_SHORT,                                                       //
                       data.fontFamily,                                                  //
                       sc<size_t>(std::round(lastFontSizeUnscaled * lastScale)),         //
-                      maxSize.has_value() ? std::format("{}", *maxSize) : "<no value>", //
-                      !data.noEllipsize && maxSize.has_value() && maxSize->y >= 0,      //
-                      maxSize.has_value() && maxSize->x >= 0                            //
+                      maxSize, //
+                      !data.noEllipsize,      //
+                      data.noEllipsize                            //
         );
     }
 

@@ -46,14 +46,12 @@ namespace Hyprtoolkit {
         float                                                                                          lastScale            = 1.F;
         bool                                                                                           needsTexRefresh = false, newTex = false;
 
-        Hyprutils::Math::Vector2D                                                                      lastMaxSize;
-
         SP<IRendererTexture>                                                                           tex;
         SP<IRendererTexture>                                                                           oldTex; // while loading a new one
         PHLANIMVAR<CHyprColor>                                                                         color;
         SP<Hyprutils::Animation::SAnimationPropertyConfig>                                             colorAnimationConfig;
         ASP<Hyprgraphics::CTextResource>                                                               resource;
-        Hyprutils::Math::Vector2D                                                                      size, preferred;
+        Hyprutils::Math::Vector2D                                                                      size;
 
         Hyprutils::Math::Vector2D                                                                      lastCursorPos;
 
@@ -61,13 +59,12 @@ namespace Hyprtoolkit {
         bool                                                                                           colorAnimationEnabled = false;
         bool                                                                                           renderColorAtPaint    = false;
 
-        Hyprutils::Math::Vector2D                                                                      getTextSizePreferred();
         Hyprutils::Math::CBox                                                                          getCharBox(size_t offset);
         std::optional<size_t>                                                                          vecToOffset(const Hyprutils::Math::Vector2D& vec);
         float                                                                                          getCursorPos(size_t offset);
         float                                                                                          getCursorPos(const Hyprutils::Math::Vector2D& click);
         Hyprutils::Math::Vector2D                                                                      unscale(const Hyprutils::Math::Vector2D& x);
-        std::tuple<UP<Hyprgraphics::CCairoSurface>, cairo_t*, PangoLayout*, Hyprutils::Math::Vector2D> prepPangoLayout();
+        PangoLayout* prepPangoLayout();
         void                                                                                           scheduleTexRefresh();
         void                                                                                           renderTex();
         void                                                                                           postTexLoad();
