@@ -516,7 +516,14 @@ Vector2D SElementInternalData::getPreferredSizeGeneric(const CDynamicSize& size,
     auto s = size.calculate(parent);
     if (s.x != -1 && s.y != -1)
         return s;
-    auto max = maxChildSize(parent - Vector2D{margin * 2, margin * 2});
+
+    auto parentForChild = parent - Vector2D{margin * 2, margin * 2};
+    if (s.x != -1)
+        parentForChild.x = s.x;
+    if (s.y != -1)
+        parentForChild.y = s.y;
+
+    auto max = maxChildSize(parentForChild);
     if (s.x == -1)
         s.x = max.x;
     if (s.y == -1)

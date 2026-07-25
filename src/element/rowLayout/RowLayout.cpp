@@ -56,10 +56,22 @@ std::optional<Hyprutils::Math::Vector2D> CRowLayoutElement::preferredSize(const 
     if (calc.x != -1 && calc.y != -1)
         return calc;
 
+    Vector2D parentForChild = parent;
+    parentForChild.x -= impl->margin * 2;
+    parentForChild.y -= impl->margin * 2;
+
+    if (calc.x != -1) 
+        parentForChild.x = calc.x;
+    if (calc.y != -1)
+        parentForChild.y = calc.y;
+    else
+        parentForChild.y = 0;
+
     Vector2D max;
     for (const auto& child : impl->children) {
-        max.x += childSize(child).x + m_impl->data.gap;
-        max.y = std::max(max.y, childSize(child).y);
+        Vector2D childPref = child->preferredSize(parentForChild).value_or({ 0, 0 });
+        max.x += childPref.x + m_impl->data.gap;
+        max.y = std::max(max.y, childPref.y);
     }
 
     if (!impl->children.empty())
