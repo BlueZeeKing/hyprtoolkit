@@ -38,12 +38,17 @@ SP<CButtonElement> CButtonElement::create(const SButtonData& data) {
 CButtonElement::CButtonElement(const SButtonData& data) : IElement(), m_impl(makeUnique<SButtonImpl>()) {
     m_impl->data = data;
 
+    auto calc_size = data.size.calculate({0, 0});
+
     m_impl->background = CRectangleBuilder::begin()
                              ->color([impl = m_impl.get()] { return buttonColor(*impl); })
                              ->rounding(g_palette->m_vars.smallRounding)
                              ->borderColor([impl = m_impl.get()] { return buttonBorderColor(*impl); })
                              ->borderThickness(data.noBorder ? 0 : 1)
-                             ->size(CDynamicSize{CDynamicSize::HT_SIZE_PERCENT, CDynamicSize::HT_SIZE_PERCENT, {1.F, 1.F}})
+                             ->size(CDynamicSize{
+                                     calc_size.x == -1 ? CDynamicSize::HT_SIZE_AUTO : CDynamicSize::HT_SIZE_PERCENT,
+                                     calc_size.y == -1 ? CDynamicSize::HT_SIZE_AUTO : CDynamicSize::HT_SIZE_PERCENT,
+                                     {1.F, 1.F}})
                              ->commence();
 
     m_impl->label = CTextBuilder::begin()
