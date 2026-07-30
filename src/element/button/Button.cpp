@@ -24,6 +24,8 @@ SP<CButtonElement> CButtonElement::create(const SButtonData& data) {
 CButtonElement::CButtonElement(const SButtonData& data) : IElement(), m_impl(makeUnique<SButtonImpl>()) {
     m_impl->data = data;
 
+    auto calc_size = data.size.calculate({0, 0});
+
     m_impl->background = CRectangleBuilder::begin()
                              ->color([acc = m_impl->data.accent, nobg = m_impl->data.noBg] {
                                  if (acc)
@@ -39,7 +41,10 @@ CButtonElement::CButtonElement(const SButtonData& data) : IElement(), m_impl(mak
                                  return g_palette->m_colors.alternateBase;
                              })
                              ->borderThickness(data.noBorder ? 0 : 1)
-                             ->size(CDynamicSize{CDynamicSize::HT_SIZE_PERCENT, CDynamicSize::HT_SIZE_PERCENT, {1.F, 1.F}})
+                             ->size(CDynamicSize{
+                                     calc_size.x == -1 ? CDynamicSize::HT_SIZE_AUTO : CDynamicSize::HT_SIZE_PERCENT,
+                                     calc_size.y == -1 ? CDynamicSize::HT_SIZE_AUTO : CDynamicSize::HT_SIZE_PERCENT,
+                                     {1.F, 1.F}})
                              ->commence();
 
     m_impl->label = CTextBuilder::begin()
@@ -54,8 +59,7 @@ CButtonElement::CButtonElement(const SButtonData& data) : IElement(), m_impl(mak
                                 c.a *= 0.5F;
                             return c;
                         })
-                        ->size(m_impl->data.ellipsize ? CDynamicSize{CDynamicSize::HT_SIZE_PERCENT, CDynamicSize::HT_SIZE_AUTO, {1.F, 1.F}} :
-                                                        CDynamicSize{CDynamicSize::HT_SIZE_AUTO, CDynamicSize::HT_SIZE_AUTO, {1.F, 1.F}})
+                        ->size(CDynamicSize{CDynamicSize::HT_SIZE_AUTO, CDynamicSize::HT_SIZE_AUTO, {1.F, 1.F}})
                         ->align(m_impl->data.alignText)
                         ->callback([this] {
                             m_impl->labelChanged = true;
@@ -73,7 +77,7 @@ CButtonElement::CButtonElement(const SButtonData& data) : IElement(), m_impl(mak
 
     addChild(m_impl->background);
     m_impl->background->addChild(m_impl->label);
-    m_impl->label->setMargin(2);
+    m_impl->label->setMargin(BUTTON_PAD);
 
     impl->m_externalEvents.mouseEnter.listenStatic([this](const Vector2D& pos) {
         if (!m_impl->data.enabled)
@@ -133,20 +137,6 @@ void CButtonElement::reposition(const Hyprutils::Math::CBox& box, const Hyprutil
     IElement::reposition(box);
 
     g_positioner->positionChildren(impl->self.lock());
-
-    // positionChildren gives an absolute-positioned label its full preferred width
-    // and no maxSize, so a long label overflows. when ellipsize is requested, clamp
-    // the label box to the button's inner width and re-position with that as maxSize
-    // so the text element ellipsizes instead of spilling past the background.
-    if (m_impl->data.ellipsize && m_impl->label) {
-        const double INNER_W = std::max(0.0, impl->position.w - BUTTON_PAD * 2);
-        auto         lbox    = m_impl->label->impl->position;
-        if (lbox.w > INNER_W) {
-            lbox.x = impl->position.x + BUTTON_PAD;
-            lbox.w = INNER_W;
-            g_positioner->position(m_impl->label, lbox, Vector2D{INNER_W, lbox.h});
-        }
-    }
 }
 
 void CButtonElement::setLabel(std::string label) {
@@ -196,49 +186,15 @@ Hyprutils::Math::Vector2D CButtonElement::size() {
 }
 
 std::optional<Vector2D> CButtonElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
-    auto s = m_impl->data.size.calculate(grow ? parent : Vector2D{0, 0});
-
-    if (s.x != -1 && s.y != -1)
-        return s;
-
-    const auto CALC = m_impl->label->preferredSize(parent).value() + Vector2D{BUTTON_PAD * 2, BUTTON_PAD * 2};
-
-    if (s.x == -1)
-        s.x = CALC.x;
-    if (s.y == -1)
-        s.y = CALC.y;
-
-    return s;
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent, grow);
 }
 
 std::optional<Vector2D> CButtonElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
-    auto s = m_impl->data.size.calculate(parent);
-    if (s.x != -1 && s.y != -1)
-        return s;
-
-    const auto CALC = m_impl->label->preferredSize(parent).value() + Vector2D{BUTTON_PAD * 2, BUTTON_PAD * 2};
-
-    if (s.x == -1)
-        s.x = CALC.x;
-    if (s.y == -1)
-        s.y = CALC.y;
-
-    return s;
+    return Vector2D{0, 0}; // TODO: implement
 }
 
 std::optional<Vector2D> CButtonElement::maximumSize(const Hyprutils::Math::Vector2D& parent) {
-    auto s = m_impl->data.size.calculate(parent);
-    if (s.x != -1 && s.y != -1)
-        return s;
-
-    const auto CALC = m_impl->label->preferredSize(parent).value() + Vector2D{BUTTON_PAD * 2, BUTTON_PAD * 2};
-
-    if (s.x == -1)
-        s.x = CALC.x;
-    if (s.y == -1)
-        s.y = CALC.y;
-
-    return s;
+    return std::nullopt; // TODO: implement
 }
 
 bool CButtonElement::acceptsMouseInput() {
