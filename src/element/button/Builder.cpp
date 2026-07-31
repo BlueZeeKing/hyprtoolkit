@@ -69,6 +69,11 @@ SP<CButtonBuilder> CButtonBuilder::size(CDynamicSize&& s) {
     return m_self.lock();
 }
 
+SP<CButtonBuilder> CButtonBuilder::padding(float x) {
+    m_data->padding = std::move(x);
+    return m_self.lock();
+}
+
 SP<CButtonElement> CButtonBuilder::commence() {
     if (m_element) {
         m_element->replaceData(*m_data);

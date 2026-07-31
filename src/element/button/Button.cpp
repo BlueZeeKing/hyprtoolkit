@@ -12,8 +12,6 @@
 using namespace Hyprtoolkit;
 using namespace Hyprgraphics;
 
-constexpr double   BUTTON_PAD = 5;
-
 SP<CButtonElement> CButtonElement::create(const SButtonData& data) {
     auto p          = SP<CButtonElement>(new CButtonElement(data));
     p->impl->self   = p;
@@ -77,7 +75,7 @@ CButtonElement::CButtonElement(const SButtonData& data) : IElement(), m_impl(mak
 
     addChild(m_impl->background);
     m_impl->background->addChild(m_impl->label);
-    m_impl->label->setMargin(BUTTON_PAD);
+    m_impl->label->setMargin(data.padding);
 
     impl->m_externalEvents.mouseEnter.listenStatic([this](const Vector2D& pos) {
         if (!m_impl->data.enabled)
@@ -171,6 +169,7 @@ void CButtonElement::replaceData(const SButtonData& data) {
 
     m_impl->label->rebuild()->text(std::string{data.label})->commence();
     m_impl->label->recheckColor();
+    m_impl->label->setMargin(data.padding);
 
     m_impl->label->setPositionFlag(HT_POSITION_FLAG_ALL, false);
     m_impl->label->setPositionFlag(
