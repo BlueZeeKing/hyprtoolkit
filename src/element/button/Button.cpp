@@ -12,8 +12,6 @@
 using namespace Hyprtoolkit;
 using namespace Hyprgraphics;
 
-constexpr double  BUTTON_PAD = 5;
-
 static CHyprColor buttonColor(const SButtonImpl& impl) {
     if (impl.data.accent)
         return impl.hovered ? g_palette->m_colors.accent.brighten(0.1F) : g_palette->m_colors.accent;
@@ -81,7 +79,7 @@ CButtonElement::CButtonElement(const SButtonData& data) : IElement(), m_impl(mak
 
     addChild(m_impl->background);
     m_impl->background->addChild(m_impl->label);
-    m_impl->label->setMargin(BUTTON_PAD);
+    m_impl->label->setMargin(data.padding);
 
     impl->m_externalEvents.mouseEnter.listenStatic([this](const Vector2D& pos) {
         if (!m_impl->data.enabled)
@@ -169,11 +167,10 @@ void CButtonElement::replaceData(const SButtonData& data) {
                 c.a *= 0.5F;
             return c;
         })
-        ->size(data.ellipsize ? CDynamicSize{CDynamicSize::HT_SIZE_PERCENT, CDynamicSize::HT_SIZE_AUTO, {1.F, 1.F}} :
-                                CDynamicSize{CDynamicSize::HT_SIZE_AUTO, CDynamicSize::HT_SIZE_AUTO, {1.F, 1.F}})
         ->align(data.alignText)
         ->noEllipsize(!data.ellipsize)
         ->commence();
+    m_impl->label->setMargin(data.padding);
 
     m_impl->label->setPositionFlag(HT_POSITION_FLAG_ALL, false);
     m_impl->label->setPositionFlag(

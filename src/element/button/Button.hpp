@@ -15,6 +15,7 @@ namespace Hyprtoolkit {
         bool                                                                   accent     = false;
         bool                                                                   ellipsize  = false;
         bool                                                                   enabled    = true;
+        float                                                                  padding    = 5.0f;
         std::string                                                            fontFamily = g_palette ? g_palette->m_vars.fontFamily : "Sans Serif";
         CFontSize                                                              fontSize   = {CFontSize::HT_FONT_TEXT};
         eFontAlignment                                                         alignText  = HT_FONT_ALIGN_CENTER;
