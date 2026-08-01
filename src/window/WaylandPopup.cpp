@@ -1,5 +1,6 @@
 #include "WaylandPopup.hpp"
 #include "WaylandWindow.hpp"
+#include "WaylandLayer.hpp"
 
 #include <hyprtoolkit/element/Null.hpp>
 
@@ -64,6 +65,9 @@ void CWaylandPopup::open() {
         (xdgPositionerConstraintAdjustment)(XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X));
 
     m_wlPopupState.xdgPopup = makeShared<CCXdgPopup>(m_waylandState.xdgSurface->sendGetPopup(m_parent->m_waylandState.xdgSurface.get(), m_wlPopupState.xdgPositioner.get()));
+
+    if (dynamicPointerCast<CWaylandLayer>(m_parent))
+        dynamicPointerCast<CWaylandLayer>(m_parent)->m_layerState.layerSurface->sendGetPopup(m_wlPopupState.xdgPopup->resource());
 
     if (!m_wlPopupState.xdgPopup->resource()) {
         g_logger->log(HT_LOG_ERROR, "window opening failed: no xdgToplevel given. Errno: {}", errno);
