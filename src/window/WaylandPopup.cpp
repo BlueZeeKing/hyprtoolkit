@@ -15,7 +15,7 @@
 using namespace Hyprtoolkit;
 using namespace Hyprutils::Math;
 
-CWaylandPopup::CWaylandPopup(const SWindowCreationData& data, SP<CWaylandWindow> window) : m_parent(window), m_creationData(data) {
+CWaylandPopup::CWaylandPopup(const SWindowCreationData& data, SP<IWaylandWindow> window) : m_parent(window), m_creationData(data) {
     m_rootElement = CNullBuilder::begin()->commence();
 }
 
