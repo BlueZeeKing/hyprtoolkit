@@ -112,14 +112,16 @@ void CTextboxElement::init() {
 
     m_impl->listeners.enter = impl->m_externalEvents.keyboardEnter.listen([this] {
         m_impl->bgInnerCont->addChild(m_impl->cursorCont);
-        impl->window->setIMTo(impl->position, m_impl->data.text, m_impl->inputState.cursor);
+        if (impl->window)
+            impl->window->setIMTo(impl->position, m_impl->data.text, m_impl->inputState.cursor);
         m_impl->bg->rebuild()->borderColor([] { return g_palette->m_colors.alternateBase.brighten(0.5F); })->commence();
         m_impl->focusCursorAtClickedChar();
     });
 
     m_impl->listeners.leave = impl->m_externalEvents.keyboardLeave.listen([this] {
         m_impl->bgInnerCont->removeChild(m_impl->cursorCont);
-        impl->window->resetIM();
+        if (impl->window)
+            impl->window->resetIM();
         m_impl->bg->rebuild()->borderColor([] { return g_palette->m_colors.alternateBase; })->commence();
     });
 
