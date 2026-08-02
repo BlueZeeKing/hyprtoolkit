@@ -47,7 +47,7 @@ void CPositioner::positionChildren(SP<IElement> element, const SRepositionData& 
         }
 
         // it has a size, let's see what it wants.
-        CBox itemBox = {BOX.pos(), *itemSize};
+        CBox itemBox = CBox{BOX.pos(), *itemSize}.intersection(BOX);
 
         if (c->impl->positionMode == IElement::HT_POSITION_ABSOLUTE) {
 
