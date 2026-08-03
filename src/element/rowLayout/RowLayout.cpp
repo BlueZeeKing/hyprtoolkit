@@ -8,6 +8,8 @@
 
 #include "../Element.hpp"
 #include "../LinearLayout.hpp"
+#include "core/Logger.hpp"
+#include "hyprtoolkit/core/LogTypes.hpp"
 
 using namespace Hyprtoolkit;
 
@@ -54,8 +56,8 @@ Hyprutils::Math::Vector2D CRowLayoutElement::size() {
     return impl->position.size();
 }
 
-std::optional<Hyprutils::Math::Vector2D> CRowLayoutElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    auto calc = m_impl->data.size.calculate(parent);
+std::optional<Hyprutils::Math::Vector2D> CRowLayoutElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
+    auto calc = m_impl->data.size.calculate(grow ? parent : Vector2D{0, 0});
 
     if (calc.x != -1 && calc.y != -1)
         return calc;
@@ -68,12 +70,10 @@ std::optional<Hyprutils::Math::Vector2D> CRowLayoutElement::preferredSize(const 
         parentForChild.x = calc.x;
     if (calc.y != -1)
         parentForChild.y = calc.y;
-    else
-        parentForChild.y = 0;
 
     Vector2D max;
     for (const auto& child : impl->children) {
-        Vector2D childPref = child->preferredSize(parentForChild).value_or({ 0, 0 });
+        Vector2D childPref = child->preferredSize(parentForChild, false).value_or({ 0, 0 });
         max.x += childPref.x + m_impl->data.gap;
         max.y = std::max(max.y, childPref.y);
     }

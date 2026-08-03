@@ -305,8 +305,8 @@ void CScrollAreaElement::setScroll(const Hyprutils::Math::Vector2D& x) {
         impl->window->scheduleReposition(impl->self);
 }
 
-std::optional<Vector2D> CScrollAreaElement::preferredSize(const Vector2D& parent) {
-    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
+std::optional<Vector2D> CScrollAreaElement::preferredSize(const Vector2D& parent, bool grow) {
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent, grow);
 }
 
 std::optional<Vector2D> CScrollAreaElement::minimumSize(const Vector2D& parent) {

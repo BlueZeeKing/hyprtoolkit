@@ -83,7 +83,7 @@ void IElement::setTooltip(std::string&& x) {
     impl->hasTooltip = !impl->tooltip.empty();
 }
 
-std::optional<Hyprutils::Math::Vector2D> IElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
+std::optional<Hyprutils::Math::Vector2D> IElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
     return std::nullopt;
 }
 
@@ -512,8 +512,8 @@ Vector2D SElementInternalData::maxChildSize(const Vector2D& parent) {
     return max + Vector2D{margin * 2, margin * 2};
 }
 
-Vector2D SElementInternalData::getPreferredSizeGeneric(const CDynamicSize& size, const Vector2D& parent) {
-    auto s = size.calculate(parent);
+Vector2D SElementInternalData::getPreferredSizeGeneric(const CDynamicSize& size, const Vector2D& parent, bool grow) {
+    auto s = size.calculate(grow ? parent : Vector2D{0, 0});
     if (s.x != -1 && s.y != -1)
         return s;
 

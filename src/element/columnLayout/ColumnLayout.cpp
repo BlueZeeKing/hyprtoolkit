@@ -62,8 +62,8 @@ Hyprutils::Math::Vector2D CColumnLayoutElement::childSize(Hyprutils::Memory::CSh
     return {-1, -1};
 }
 
-std::optional<Hyprutils::Math::Vector2D> CColumnLayoutElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    auto calc = m_impl->data.size.calculate(parent);
+std::optional<Hyprutils::Math::Vector2D> CColumnLayoutElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
+    auto calc = m_impl->data.size.calculate(grow ? parent : Vector2D{0, 0});
 
     if (calc.x != -1 && calc.y != -1)
         return calc;
@@ -74,15 +74,13 @@ std::optional<Hyprutils::Math::Vector2D> CColumnLayoutElement::preferredSize(con
 
     if (calc.x != -1) 
         parentForChild.x = calc.x;
-    else
-        parentForChild.x = 0;
     if (calc.y != -1)
         parentForChild.y = calc.y;
 
 
     Vector2D max;
     for (const auto& child : impl->children) {
-        Vector2D childPref = child->preferredSize(parentForChild).value_or({ 0, 0 });
+        Vector2D childPref = child->preferredSize(parentForChild, false).value_or({ 0, 0 });
 
         max.x = std::max(max.x, childPref.x);
         max.y += childPref.y + m_impl->data.gap;
