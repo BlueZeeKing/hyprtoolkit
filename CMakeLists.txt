@@ -193,6 +193,14 @@ if(BUILD_TESTING)
   target_link_libraries(simpleLayer PRIVATE PkgConfig::deps hyprtoolkit)
   add_dependencies(tests simpleLayer)
 
+  add_executable(layoutBenchmark "tests/LayoutBenchmark.cpp" "tests/unit/tricks/Tricks.cpp")
+  target_link_libraries(layoutBenchmark PRIVATE PkgConfig::deps hyprtoolkit)
+  add_dependencies(tests layoutBenchmark)
+  target_include_directories(
+    layoutBenchmark
+    PUBLIC "./include"
+    PRIVATE "./src" "./src/include" "./protocols" "${CMAKE_BINARY_DIR}")
+
   # GTest
   find_package(GTest CONFIG REQUIRED)
   include(GoogleTest)
