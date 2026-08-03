@@ -521,7 +521,7 @@ Vector2D SElementInternalData::getPreferredSizeGeneric(const CDynamicSize& size,
     if (s.x != -1)
         parentForChild.x = s.x;
     if (s.y != -1)
-        parentForChild.x = s.y;
+        parentForChild.y = s.y;
 
     auto max = maxChildSize(parentForChild);
     if (s.x == -1)
