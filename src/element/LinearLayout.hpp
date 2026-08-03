@@ -3,6 +3,8 @@
 #include "../helpers/Memory.hpp"
 #include "../layout/Positioner.hpp"
 #include "Element.hpp"
+#include "core/Logger.hpp"
+#include "hyprtoolkit/core/LogTypes.hpp"
 
 #include <hyprutils/math/Box.hpp>
 #include <hyprutils/math/Vector2D.hpp>
@@ -43,6 +45,7 @@ namespace Hyprtoolkit::LinearLayout {
             if (used + axisPrimary(cSize) > MAX + 1) {
                 // we exceeded our available space.
                 if (!child->minimumSize(box.size())) {
+                    g_logger->log(HT_LOG_WARNING, "layout: failed to position element (minimum size of child is bigger than parent)");
                     // doesn't fit: disable
                     child->impl->setFailedPositioning(true);
                     continue;
@@ -87,6 +90,7 @@ namespace Hyprtoolkit::LinearLayout {
                     }
 
                     if (needs > 0) {
+                        g_logger->log(HT_LOG_WARNING, "layout: failed to position element (couldn't find enough space)");
                         // doesn't fit: disable and expand the last if possible
                         child->impl->setFailedPositioning(true);
                         if (i != 0) {
