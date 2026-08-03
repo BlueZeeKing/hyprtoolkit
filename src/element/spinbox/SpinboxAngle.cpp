@@ -68,15 +68,15 @@ Hyprutils::Math::Vector2D CSpinboxAngleElement::size() {
 }
 
 std::optional<Vector2D> CSpinboxAngleElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_data.size, parent);
 }
 
 std::optional<Vector2D> CSpinboxAngleElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_data.size, parent);
 }
 
 std::optional<Vector2D> CSpinboxAngleElement::maximumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_data.size, parent);
 }
 
 bool CSpinboxAngleElement::acceptsMouseInput() {

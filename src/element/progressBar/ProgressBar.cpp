@@ -146,15 +146,15 @@ Hyprutils::Math::Vector2D CProgressBarElement::size() {
 }
 
 std::optional<Vector2D> CProgressBarElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
 }
 
 std::optional<Vector2D> CProgressBarElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
 }
 
 std::optional<Vector2D> CProgressBarElement::maximumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
 }
 
 bool CProgressBarElement::positioningDependsOnChild() {

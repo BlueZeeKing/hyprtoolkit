@@ -41,13 +41,13 @@ Hyprutils::Math::Vector2D CDropdownHandleElement::size() {
 }
 
 std::optional<Vector2D> CDropdownHandleElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_data.size, parent);
 }
 
 std::optional<Vector2D> CDropdownHandleElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_data.size, parent);
 }
 
 std::optional<Vector2D> CDropdownHandleElement::maximumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_data.size, parent);
 }
