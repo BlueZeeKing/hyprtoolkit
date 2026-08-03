@@ -94,16 +94,16 @@ Hyprutils::Math::Vector2D CSpinboxElement::size() {
     return impl->position.size();
 }
 
-std::optional<Vector2D> CSpinboxElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
+std::optional<Vector2D> CSpinboxElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent, grow);
 }
 
 std::optional<Vector2D> CSpinboxElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
-    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent, false);
 }
 
 std::optional<Vector2D> CSpinboxElement::maximumSize(const Hyprutils::Math::Vector2D& parent) {
-    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent, true);
 }
 
 bool CSpinboxElement::acceptsMouseInput() {

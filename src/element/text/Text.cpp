@@ -221,7 +221,7 @@ std::optional<Vector2D> CTextElement::maximumSize(const Hyprutils::Math::Vector2
     return std::nullopt;
 }
 
-std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
+std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
     return m_impl->preferred;
 }
 

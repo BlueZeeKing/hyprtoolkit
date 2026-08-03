@@ -40,14 +40,14 @@ Hyprutils::Math::Vector2D CDropdownHandleElement::size() {
     return impl->position.size();
 }
 
-std::optional<Vector2D> CDropdownHandleElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return impl->getPreferredSizeGeneric(m_data.size, parent);
+std::optional<Vector2D> CDropdownHandleElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
+    return impl->getPreferredSizeGeneric(m_data.size, parent, grow);
 }
 
 std::optional<Vector2D> CDropdownHandleElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
-    return impl->getPreferredSizeGeneric(m_data.size, parent);
+    return impl->getPreferredSizeGeneric(m_data.size, parent, false);
 }
 
 std::optional<Vector2D> CDropdownHandleElement::maximumSize(const Hyprutils::Math::Vector2D& parent) {
-    return impl->getPreferredSizeGeneric(m_data.size, parent);
+    return impl->getPreferredSizeGeneric(m_data.size, parent, true);
 }

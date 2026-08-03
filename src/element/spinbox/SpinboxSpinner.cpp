@@ -122,8 +122,8 @@ Hyprutils::Math::Vector2D CSpinboxSpinner::size() {
     return impl->position.size();
 }
 
-std::optional<Vector2D> CSpinboxSpinner::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_layout->preferredSize(parent);
+std::optional<Vector2D> CSpinboxSpinner::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
+    return m_layout->preferredSize(parent, grow);
 }
 
 std::optional<Vector2D> CSpinboxSpinner::minimumSize(const Hyprutils::Math::Vector2D& parent) {

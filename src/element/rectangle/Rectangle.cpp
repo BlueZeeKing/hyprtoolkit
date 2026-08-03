@@ -137,8 +137,8 @@ Hyprutils::Math::Vector2D CRectangleElement::size() {
     return impl->position.size();
 }
 
-std::optional<Vector2D> CRectangleElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
+std::optional<Vector2D> CRectangleElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent, grow);
 }
 
 std::optional<Vector2D> CRectangleElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {

@@ -83,7 +83,7 @@ void IElement::setTooltip(std::string&& x) {
     impl->hasTooltip = !impl->tooltip.empty();
 }
 
-std::optional<Hyprutils::Math::Vector2D> IElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
+std::optional<Hyprutils::Math::Vector2D> IElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
     return std::nullopt;
 }
 
@@ -496,10 +496,10 @@ void SElementInternalData::setFailedPositioning(bool set) {
     breadthfirst([set](SP<IElement> e) { e->impl->failedPositioning = set; });
 }
 
-Vector2D SElementInternalData::maxChildSize(const Vector2D& parent) {
+Vector2D SElementInternalData::maxChildSize(const Vector2D& parent, bool grow) {
     Vector2D max;
     for (const auto& e : children) {
-        auto size = e->preferredSize(parent);
+        auto size = e->preferredSize(parent, grow);
         if (!size)
             size = e->minimumSize(parent);
 
@@ -512,8 +512,8 @@ Vector2D SElementInternalData::maxChildSize(const Vector2D& parent) {
     return max + Vector2D{margin * 2, margin * 2};
 }
 
-Vector2D SElementInternalData::getPreferredSizeGeneric(const CDynamicSize& size, const Vector2D& parent) {
-    auto s = size.calculate(parent);
+Vector2D SElementInternalData::getPreferredSizeGeneric(const CDynamicSize& size, const Vector2D& parent, bool grow) {
+    auto s = size.calculate(parent, grow);
     if (s.x != -1 && s.y != -1)
         return s;
 
@@ -523,7 +523,7 @@ Vector2D SElementInternalData::getPreferredSizeGeneric(const CDynamicSize& size,
     if (s.y != -1)
         parentForChild.y = s.y;
 
-    auto max = maxChildSize(parentForChild);
+    auto max = maxChildSize(parentForChild, grow);
     if (s.x == -1)
         s.x = max.x;
     if (s.y == -1)
