@@ -252,15 +252,15 @@ Hyprutils::Math::Vector2D CComboboxElement::size() {
 }
 
 std::optional<Vector2D> CComboboxElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
 }
 
 std::optional<Vector2D> CComboboxElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
 }
 
 std::optional<Vector2D> CComboboxElement::maximumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
 }
 
 bool CComboboxElement::acceptsMouseInput() {

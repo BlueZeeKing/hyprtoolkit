@@ -785,21 +785,15 @@ Hyprutils::Math::Vector2D CTextboxElement::size() {
 }
 
 std::optional<Vector2D> CTextboxElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
 }
 
 std::optional<Vector2D> CTextboxElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
-    auto s = m_impl->data.size.calculate(parent);
-    if (s.x != -1 && s.y != -1)
-        return s;
-    return Vector2D{0, 0};
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
 }
 
 std::optional<Vector2D> CTextboxElement::maximumSize(const Hyprutils::Math::Vector2D& parent) {
-    auto s = m_impl->data.size.calculate(parent);
-    if (s.x != -1 && s.y != -1)
-        return s;
-    return std::nullopt;
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent);
 }
 
 bool CTextboxElement::acceptsMouseInput() {
