@@ -218,9 +218,19 @@ std::optional<Vector2D> CTextElement::maximumSize(const Hyprutils::Math::Vector2
 }
 
 std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vector2D& parent) {
+    auto s = m_impl->data.size.calculate(parent);
+    if (s.x != -1 && s.y != -1)
+        return s;
+
+    auto maxSize = parent - Vector2D{impl->margin * 2, impl->margin * 2};
+    if (s.x != -1)
+        maxSize.x = s.x;
+    if (s.y != -1)
+        maxSize.x = s.y;
+    maxSize = m_impl->applyClampSize(maxSize);
+
     m_impl->updateScale();
     auto LAYOUT = m_impl->pangoData.layout;
-    auto maxSize = m_impl->applyClampSize(parent - Vector2D(impl->margin * 2, impl->margin * 2));
     if (maxSize.x != 0)
         pango_layout_set_width(LAYOUT, sc<int>(maxSize.x * PANGO_SCALE * m_impl->lastScale));
     else
@@ -234,6 +244,10 @@ std::optional<Vector2D> CTextElement::preferredSize(const Hyprutils::Math::Vecto
     pango_layout_get_pixel_extents(LAYOUT, &ink, &logical);
 
     auto result = Vector2D{std::ceil(logical.width / m_impl->lastScale), std::ceil(logical.height / m_impl->lastScale)} + Vector2D(impl->margin * 2, impl->margin * 2);
+    if (s.x == -1)
+        s.x = result.x;
+    if (s.y == -1)
+        s.y = result.y;
 
     return result;
 }
