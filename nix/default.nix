@@ -5,7 +5,6 @@
   pkg-config,
   abseil-cpp,
   aquamarine,
-  cairo,
   epoll-shim,
   gtest,
   hyprgraphics,
@@ -13,12 +12,8 @@
   hyprutils,
   hyprwayland-scanner,
   iniparser,
-  libGL,
-  libdrm,
   libgbm,
   libxkbcommon,
-  pango,
-  pixman,
   wayland,
   wayland-protocols,
   wayland-scanner,
@@ -39,30 +34,28 @@ stdenv.mkDerivation {
     cmake
     pkg-config
     hyprwayland-scanner
-    wayland-scanner
   ];
+
+  propagatedBuildInputs = [ hyprgraphics ];
 
   buildInputs = [
     abseil-cpp
     aquamarine
-    cairo
     gtest
-    hyprgraphics
     hyprlang
     hyprutils
     iniparser
-    libGL
-    libdrm
     libgbm
     libxkbcommon
-    pango
-    pixman
     wayland
+    wayland-scanner
     wayland-protocols
   ]
   ++ (optional stdenv.isBSD epoll-shim);
 
   env.XDG_RUNTIME_DIR = "/tmp/runtime";
+
+  strictDeps = true;
 
   cmakeBuildType = if doCheck then "Debug" else "RelWithDebInfo";
 
