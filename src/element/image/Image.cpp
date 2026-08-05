@@ -53,7 +53,7 @@ void CImageElement::paint() {
         .box      = impl->position,
         .texture  = assetToUse->tex(),
         .a        = 1.F,
-        .rounding = 0,
+        .rounding = m_impl->data.rounding,
     });
 }
 
