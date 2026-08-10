@@ -5,7 +5,6 @@
 #include "../../window/ToolkitWindow.hpp"
 #include "../../core/AnimationManager.hpp"
 #include "../Element.hpp"
-#include "core/Logger.hpp"
 
 using namespace Hyprtoolkit;
 
