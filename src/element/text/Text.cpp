@@ -1,14 +1,9 @@
 #include "Text.hpp"
 
 #include <cmath>
-#include <glib-object.h>
 #include <hyprtoolkit/palette/Palette.hpp>
 #include <hyprgraphics/color/Color.hpp>
-#include <hyprutils/math/Vector2D.hpp>
-#include <pango-1.0/pango/pangocairo.h>
-#include <pango/pango-fontmap.h>
-#include <pango/pango-layout.h>
-#include <pango/pango-types.h>
+#include <pango/pango.h>
 
 #include "../../window/ToolkitWindow.hpp"
 #include "../../layout/Positioner.hpp"
