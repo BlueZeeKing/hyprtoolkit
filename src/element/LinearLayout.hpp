@@ -3,8 +3,7 @@
 #include "../helpers/Memory.hpp"
 #include "../layout/Positioner.hpp"
 #include "Element.hpp"
-#include "core/Logger.hpp"
-#include "hyprtoolkit/core/LogTypes.hpp"
+#include "../core/Logger.hpp"
 
 #include <hyprutils/math/Box.hpp>
 #include <hyprutils/math/Vector2D.hpp>
