@@ -8,8 +8,6 @@
 
 #include "../Element.hpp"
 #include "../LinearLayout.hpp"
-#include "core/Logger.hpp"
-#include "hyprtoolkit/core/LogTypes.hpp"
 
 using namespace Hyprtoolkit;
 
