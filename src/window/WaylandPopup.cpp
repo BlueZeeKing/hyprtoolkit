@@ -3,6 +3,7 @@
 #include "WaylandLayer.hpp"
 
 #include <hyprtoolkit/element/Null.hpp>
+#include <hyprutils/math/Vector2D.hpp>
 
 #include "../element/Element.hpp"
 #include "../core/platforms/WaylandPlatform.hpp"
@@ -60,7 +61,8 @@ void CWaylandPopup::open() {
     m_wlPopupState.xdgPositioner->sendSetAnchorRect(m_creationData.pos.x, m_creationData.pos.y, 1, 1);
     m_wlPopupState.xdgPositioner->sendSetAnchor(XDG_POSITIONER_ANCHOR_TOP_LEFT);
     m_wlPopupState.xdgPositioner->sendSetGravity(XDG_POSITIONER_GRAVITY_BOTTOM_RIGHT);
-    m_wlPopupState.xdgPositioner->sendSetSize(m_creationData.preferredSize.value_or(Vector2D{200, 200}).x, m_creationData.preferredSize.value_or(Vector2D{200, 200}).y);
+    auto preferredSize = m_creationData.preferredSize.value_or(m_rootElement->preferredSize(Vector2D{0, 0}).value_or(Vector2D{200, 200}));
+    m_wlPopupState.xdgPositioner->sendSetSize(preferredSize.x, preferredSize.y);
     m_wlPopupState.xdgPositioner->sendSetConstraintAdjustment(
         (xdgPositionerConstraintAdjustment)(XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_Y | XDG_POSITIONER_CONSTRAINT_ADJUSTMENT_SLIDE_X));
 
