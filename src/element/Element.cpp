@@ -7,6 +7,7 @@
 #include "../window/ToolkitWindow.hpp"
 #include "../layout/Positioner.hpp"
 #include "../core/AnimationManager.hpp"
+#include "hyprtoolkit/element/Element.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -570,4 +571,8 @@ Vector2D SElementInternalData::getPreferredSizeGeneric(const CDynamicSize& size,
     if (s.y == -1)
         s.y = max.y;
     return s;
+}
+
+CBox IElement::getPosition() const {
+    return impl->position;
 }
