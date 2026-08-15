@@ -82,6 +82,8 @@ namespace Hyprtoolkit {
         // forces a reposition right now, useful for pre-calculating expected sizes
         virtual void forceReposition();
 
+        Hyprutils::Math::CBox getPosition() const;
+
         HT_HIDDEN :
 
             /* Sizes for auto positioning in layouts */
