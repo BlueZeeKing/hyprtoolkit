@@ -63,7 +63,7 @@ Hyprutils::Math::Vector2D CColumnLayoutElement::childSize(Hyprutils::Memory::CSh
 }
 
 std::optional<Hyprutils::Math::Vector2D> CColumnLayoutElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
-    auto calc = m_impl->data.size.calculate(grow ? parent : Vector2D{0, 0});
+    auto calc = m_impl->data.size.calculate(parent, grow);
 
     if (calc.x != -1 && calc.y != -1)
         return calc;

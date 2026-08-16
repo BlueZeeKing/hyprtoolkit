@@ -205,7 +205,7 @@ Hyprutils::Math::Vector2D CImageElement::size() {
 }
 
 std::optional<Vector2D> CImageElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
-    auto s = m_impl->data.size.calculate(grow ? parent : Vector2D{0, 0});
+    auto s = m_impl->data.size.calculate(parent, grow);
     if (s.x != -1 && s.y != -1)
         return s;
 
