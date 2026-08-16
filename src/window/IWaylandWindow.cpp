@@ -57,7 +57,7 @@ void IWaylandWindow::configure(const Vector2D& size, uint32_t serial) {
     m_waylandState.logicalSize  = size;
     m_waylandState.appliedScale = m_fractionalScale;
 
-    m_waylandState.size = (size * m_fractionalScale).floor();
+    m_waylandState.size = (size * m_fractionalScale + Vector2D{ 1, 1 }).floor();
     m_waylandState.viewport->sendSetDestination(m_waylandState.logicalSize.x, m_waylandState.logicalSize.y);
     m_waylandState.surface->sendSetBufferScale(1);
 
