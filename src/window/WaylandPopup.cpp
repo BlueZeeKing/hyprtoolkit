@@ -19,6 +19,7 @@ using namespace Hyprutils::Math;
 
 CWaylandPopup::CWaylandPopup(const SWindowCreationData& data, SP<IWaylandWindow> window) : m_parent(window), m_creationData(data) {
     m_rootElement = CNullBuilder::begin()->commence();
+    m_fractionalScale = window->m_fractionalScale;
 }
 
 CWaylandPopup::~CWaylandPopup() {
