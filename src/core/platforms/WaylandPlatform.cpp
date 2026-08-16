@@ -417,7 +417,8 @@ void CWaylandPlatform::initSeat() {
 
                 Vector2D local = {wl_fixed_to_double(x), wl_fixed_to_double(y)};
 
-                m_currentWindow->mouseMove(local);
+                auto window = m_currentWindow.lock();
+                window->mouseMove(local);
             });
 
             m_waylandState.pointer->setButton([this](CCWlPointer* r, uint32_t serial, uint32_t time, uint32_t button, wl_pointer_button_state state) {
