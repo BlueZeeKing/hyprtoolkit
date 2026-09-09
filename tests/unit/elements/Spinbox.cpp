@@ -4,6 +4,7 @@
 
 #include "../tricks/Tricks.hpp"
 #include "element/Element.hpp"
+#include "hyprtoolkit/types/SizeType.hpp"
 
 using namespace Hyprtoolkit;
 
@@ -80,7 +81,7 @@ TEST(Element, spinboxRebuildAppliesFill) {
     const auto element = SP<IElement>{spinbox};
     const auto before  = element->preferredSize({400, 100});
 
-    spinbox->rebuild()->fill(true)->commence();
+    spinbox->rebuild()->fill(true)->size({CDynamicSize::HT_SIZE_PERCENT, CDynamicSize::HT_SIZE_AUTO, {1, 1}})->commence();
     const auto after = element->preferredSize({400, 100});
 
     ASSERT_TRUE(before.has_value());
