@@ -44,10 +44,8 @@ void CComboboxElement::init() {
     else
         m_impl->data.currentItem = std::min(m_impl->data.currentItem, m_impl->data.items.size() - 1);
 
-    m_impl->layout = CRowLayoutBuilder::begin()->size({CDynamicSize::HT_SIZE_PERCENT, CDynamicSize::HT_SIZE_ABSOLUTE, {1, 24}})->commence();
+    m_impl->layout = CRowLayoutBuilder::begin()->size({CDynamicSize::HT_SIZE_PERCENT, CDynamicSize::HT_SIZE_PERCENT, {1, 1}})->gap(INNER_MARG)->commence();
 
-    m_impl->layout->setPositionFlag(HT_POSITION_FLAG_CENTER, true);
-    m_impl->layout->setPositionMode(HT_POSITION_ABSOLUTE);
     m_impl->layout->setMargin(INNER_MARG);
 
     m_impl->label = CTextBuilder::begin()
@@ -59,6 +57,8 @@ void CComboboxElement::init() {
                         })
                         ->commence();
 
+    m_impl->label->setGrow(true);
+
     m_impl->background = CRectangleBuilder::begin()
                              ->color([] { return g_palette->m_colors.base; })
                              ->rounding(g_palette->m_vars.smallRounding)
@@ -67,8 +67,6 @@ void CComboboxElement::init() {
                              ->size(CDynamicSize{CDynamicSize::HT_SIZE_PERCENT, CDynamicSize::HT_SIZE_PERCENT, {1.F, 1.F}})
                              ->commence();
 
-    m_impl->background->setPositionMode(HT_POSITION_ABSOLUTE);
-    m_impl->background->setPositionFlag(HT_POSITION_FLAG_CENTER, true);
     m_impl->background->impl->clipChildren = true;
 
     m_impl->handle = CDropdownHandleElement::create(SDropdownHandleData{
@@ -76,17 +74,8 @@ void CComboboxElement::init() {
         .color = [] { return g_palette->m_colors.text; },
     });
 
-    m_impl->leftPad   = CNullBuilder::begin()->size({CDynamicSize::HT_SIZE_ABSOLUTE, CDynamicSize::HT_SIZE_PERCENT, {INNER_MARG, 1.F}})->commence();
-    m_impl->rightPad  = CNullBuilder::begin()->size({CDynamicSize::HT_SIZE_ABSOLUTE, CDynamicSize::HT_SIZE_PERCENT, {INNER_MARG, 1.F}})->commence();
-    m_impl->middlePad = CNullBuilder::begin()->size({CDynamicSize::HT_SIZE_ABSOLUTE, CDynamicSize::HT_SIZE_PERCENT, {INNER_MARG, 1.F}})->commence();
-
-    m_impl->middlePad->setGrow(true);
-
-    m_impl->layout->addChild(m_impl->leftPad);
     m_impl->layout->addChild(m_impl->label);
-    m_impl->layout->addChild(m_impl->middlePad);
     m_impl->layout->addChild(m_impl->handle);
-    m_impl->layout->addChild(m_impl->rightPad);
 
     addChild(m_impl->background);
     addChild(m_impl->layout);
@@ -273,15 +262,15 @@ Hyprutils::Math::Vector2D CComboboxElement::size() {
 }
 
 std::optional<Vector2D> CComboboxElement::preferredSize(const Hyprutils::Math::Vector2D& parent, bool grow) {
-    return m_impl->data.size.calculate(parent, grow);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent, grow);
 }
 
 std::optional<Vector2D> CComboboxElement::minimumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->data.size.calculate(parent, false);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent, false);
 }
 
 std::optional<Vector2D> CComboboxElement::maximumSize(const Hyprutils::Math::Vector2D& parent) {
-    return m_impl->data.size.calculate(parent);
+    return impl->getPreferredSizeGeneric(m_impl->data.size, parent, true);
 }
 
 bool CComboboxElement::acceptsMouseInput() {
