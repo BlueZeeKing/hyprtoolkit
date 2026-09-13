@@ -15,6 +15,7 @@ namespace Hyprtoolkit {
         bool                                                                          snapInt = true;
         std::function<void(Hyprutils::Memory::CSharedPointer<CSliderElement>, float)> onChanged;
         CDynamicSize                                                                  size{CDynamicSize::HT_SIZE_AUTO, CDynamicSize::HT_SIZE_AUTO, {}};
+        bool                                                                          showLabel = false;
     };
 
     struct SSliderImpl {

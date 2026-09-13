@@ -39,6 +39,11 @@ SP<CSliderBuilder> CSliderBuilder::size(CDynamicSize&& s) {
     return m_self.lock();
 }
 
+SP<CSliderBuilder> CSliderBuilder::showLabel(bool x) {
+    m_data->showLabel = x;
+    return m_self.lock();
+}
+
 SP<CSliderElement> CSliderBuilder::commence() {
     if (m_element) {
         m_element->replaceData(*m_data);

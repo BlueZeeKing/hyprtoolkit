@@ -25,6 +25,7 @@ namespace Hyprtoolkit {
         Hyprutils::Memory::CSharedPointer<CSliderBuilder>        val(float);
         Hyprutils::Memory::CSharedPointer<CSliderBuilder>        snapInt(bool);
         Hyprutils::Memory::CSharedPointer<CSliderBuilder>        size(CDynamicSize&&);
+        Hyprutils::Memory::CSharedPointer<CSliderBuilder>        showLabel(bool);
 
         Hyprutils::Memory::CSharedPointer<CSliderElement>        commence();
 
